@@ -1,0 +1,68 @@
+#add flanks and sort gene bedfile
+awk -F'\t' 'BEGIN{OFS="\t"} {print $1, $2 - 1, $3 + 1, $4, $6}' /home/maria/filter_transcripts/output/exon_cords_ids.bed \
+| sort -k1,1V -k2,2n -k3,3n  | uniq \
+> /home/maria/cactus_target_size/auxillary/coord_flank.bed
+
+#find regions that intersect, and have different gene ids 
+#then extract only the intersecting regions /trim
+bedtools intersect -a /home/maria/cactus_target_size/auxillary/coord_flank.bed -b /home/maria/cactus_target_size/auxillary/coord_flank.bed -wa -wb \
+  | awk '$4 != $9 { 
+        start = ($2 > $7 ? $2 : $7);
+        end   = ($3 < $8 ? $3 : $8);
+        print $1"\t"start"\t"end
+    }' | sort -u > /home/maria/cactus_target_size/auxillary/overlaps.bed
+
+# Remove those overlaps from the original
+bedtools subtract -a /home/maria/cactus_target_size/auxillary/coord_flank.bed -b /home/maria/cactus_target_size/auxillary/overlaps.bed \
+> /home/maria/cactus_target_size/auxillary/coords_no_overlaps.bed
+
+rm /home/maria/cactus_target_size/auxillary/coord_flank.bed
+#rm /home/maria/cactus_target_size/auxillary/overlaps.bed
+
+
+#attempts -wrong
+
+'''
+
+awk -F'\t' 'BEGIN{OFS="\t"} {print $1, $2 - 1, $3 + 1, $4}' /home/maria/filter_transcripts/output/exon_cords_ids.bed \
+> /home/maria/cactus_target_size/auxillary/coord_flank2.bed
+
+wc -l /home/maria/cactus_target_size/auxillary/coord_flank2.bed
+
+#intersect keeping to orignal segments to identify intersects from diff gene ids
+bedtools intersect \
+    -a /home/maria/cactus_target_size/auxillary/coord_flank2.bed \
+    -b /home/maria/cactus_target_size/auxillary/coord_flank2.bed \
+    -wa -wb | awk '$4 != $8' \
+    > /home/maria/cactus_target_size/auxillary/overlap_gene.bed
+
+#then extract list of coords and remove dups
+awk -F'\t' 'BEGIN{OFS="\t"} {print $1, $2, $3}' /home/maria/cactus_target_size/auxillary/overlap_gene.bed \
+    | sort | uniq \
+    > /home/maria/cactus_target_size/auxillary/overlap_gene_coords1.bed
+
+awk -F'\t' 'BEGIN{OFS="\t"} {print $5, $6, $7}' /home/maria/cactus_target_size/auxillary/overlap_gene.bed \
+    | sort | uniq \
+    > /home/maria/cactus_target_size/auxillary/overlap_gene_coords2.bed
+
+#problem intersect everythin twice, everythinig is in both 
+
+
+#now intersect again, extracting the actual overlapping intervals
+bedtools intersect \
+    -a  /home/maria/cactus_target_size/auxillary/overlap_gene_coords1.bed \
+    -b  /home/maria/cactus_target_size/auxillary/overlap_gene_coords2.bed \
+    >  /home/maria/cactus_target_size/auxillary/overlap_coords.bed
+
+
+#subtract intersecting intervals
+bedtools subtract \
+-a /home/maria/cactus_target_size/auxillary/coord_flank2.bed \
+-b /home/maria/cactus_target_size/auxillary/overlap_coords.bed \
+> /home/maria/cactus_target_size/auxillary/no_overlap_gene.bed
+
+rm /home/maria/cactus_target_size/auxillary/coord_flank2.bed
+
+'''
+
+

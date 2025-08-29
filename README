@@ -1,0 +1,7 @@
+first extract sequences from hal, using hal2maf script inside cactus container
+then run this pipeline to:
+1) create bedfile from maf with only alligned bases and insertions removed from human
+2) intersect with full gene coords 
+3) reconstruct full exons and calculate trinuc target sizes
+4) extract strands of genes
+5) multiple targets by mutational signatures, depending on strand of gene 
